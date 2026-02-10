@@ -1,0 +1,213 @@
+.pageWrapper {
+    font-family: var(--font-geist-sans), sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+}
+
+/* HERO SECTION */
+.hero {
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+    padding: 8rem 5%;
+    text-align: center;
+}
+
+.badge {
+    background: #dbeafe;
+    color: #2563eb;
+    padding: 0.5rem 1.25rem;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.title {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 2rem;
+    color: #0f172a;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* MISSION SECTION */
+.section {
+    padding: 8rem 5%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+}
+
+.sectionTitle {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 1.5rem;
+}
+
+.text {
+    font-size: 1.1rem;
+    color: #64748b;
+    line-height: 1.8;
+}
+
+.highlight {
+    color: #2563eb;
+    font-weight: 700;
+}
+
+.imagePlaceholder {
+    background: #f1f5f9;
+    border-radius: 30px;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+}
+
+/* VALUES SECTION */
+.valuesSection {
+    background: #0f172a;
+    color: white;
+    padding: 8rem 5%;
+    border-radius: 50px;
+    margin: 0 2rem;
+}
+
+.valuesHeader {
+    text-align: center;
+    margin-bottom: 5rem;
+}
+
+.valuesGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.valueCard {
+    padding: 2.5rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.valueCard:hover {
+    transform: translateY(-10px);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.valueIcon {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.valueTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.valueDesc {
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+/* CONTACT SECTION */
+.contactSection {
+    background: #f8fafc;
+    padding: 8rem 5%;
+}
+
+.contactCard {
+    background: white;
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: 30px;
+    padding: 4rem;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 4rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+}
+
+.contactInfo h3 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+}
+
+.infoItem {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.infoIcon {
+    width: 48px;
+    height: 48px;
+    background: #eff6ff;
+    color: #3b82f6;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.infoDetail strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 0.2rem;
+}
+
+.infoDetail span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+@media (max-width: 1024px) {
+
+    .grid,
+    .valuesGrid,
+    .contactCard {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .title {
+        font-size: 3rem;
+    }
+
+    .valuesSection {
+        margin: 0 1rem;
+        padding: 5rem 1.5rem;
+    }
+}
