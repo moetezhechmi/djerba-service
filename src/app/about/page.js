@@ -13,7 +13,7 @@ export default function AboutPage() {
                         Simplifier la gestion de votre maison, <span className={styles.highlight}>un service à la fois.</span>
                     </h1>
                     <p className={styles.subtitle}>
-                        Dipanini est née d'une idée simple : rendre les services à domicile accessibles, transparents et d'une qualité irréprochable pour tout le monde.
+                        Easy Services Djerba est née d'une idée simple : rendre les services à domicile accessibles, transparents et d'une qualité irréprochable pour tout le monde à Djerba.
                     </p>
                 </section>
 
@@ -25,11 +25,15 @@ export default function AboutPage() {
                             <p className={styles.text}>
                                 Notre mission est de transformer la façon dont vous entretenez votre espace de vie. Nous croyons que votre temps est précieux et que trouver un professionnel de confiance ne devrait pas être un parcours du combattant.
                                 <br /><br />
-                                En combinant technologie moderne et expertise humaine, <span className={styles.highlight}>Dipanini</span> connecte les meilleurs prestataires aux foyers exigeants.
+                                En combinant technologie moderne et expertise humaine, <span className={styles.highlight}>Easy Services Djerba</span> connecte les meilleurs prestataires aux foyers exigeants.
                             </p>
                         </div>
-                        <div className={styles.imagePlaceholder}>
-                            🤝
+                        <div className={styles.imageContainer}>
+                            <img
+                                src="/renovation-djerba.png"
+                                alt="Professionnels en pleine rénovation à Djerba"
+                                className={styles.premiumImage}
+                            />
                         </div>
                     </div>
                 </section>
@@ -81,7 +85,7 @@ export default function AboutPage() {
                                 <div className={styles.infoIcon}>✉️</div>
                                 <div className={styles.infoDetail}>
                                     <strong>Email</strong>
-                                    <span>contact@dipanini.com</span>
+                                    <span>contact@easy-services-djerba.com</span>
                                 </div>
                             </div>
 
@@ -93,8 +97,12 @@ export default function AboutPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className={styles.imagePlaceholder}>
-                            🏠
+                        <div className={styles.imageContainer}>
+                            <img
+                                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000&auto=format&fit=crop"
+                                alt="Immobilier Djerba"
+                                className={styles.premiumImage}
+                            />
                         </div>
                     </div>
                 </section>

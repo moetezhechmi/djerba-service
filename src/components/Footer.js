@@ -9,7 +9,7 @@ export default function Footer() {
                 <div className={styles.grid}>
                     <div className={styles.brandCol}>
                         <div className={styles.logo}>
-                            <span style={{ color: '#2563eb' }}>🛠️</span> Dipanini
+                            <span style={{ color: '#2563eb' }}>🛠️</span> Easy Services Djerba
                         </div>
                         <p className={styles.brandDesc}>
                             La plateforme de confiance pour tous vos services à domicile. Simple, rapide et sécurisé.
@@ -26,9 +26,9 @@ export default function Footer() {
                         <h4>Services</h4>
                         <ul>
                             <li><Link href="/request/menage">Ménage à domicile</Link></li>
-                            <li><Link href="/request/plombier">Plomberie</Link></li>
+                            <li><Link href="/request/plomberie">Plomberie</Link></li>
                             <li><Link href="/request/jardinage">Jardinage</Link></li>
-                            <li><Link href="/request/electricien">Électricité</Link></li>
+                            <li><Link href="/request/electricite">Électricité</Link></li>
                             <li><Link href="/request/bricolage">Bricolage</Link></li>
                         </ul>
                     </div>
@@ -43,12 +43,7 @@ export default function Footer() {
                 </div>
 
                 <div className={styles.bottom}>
-                    <p>© 2026 Dipanini. Tous droits réservés.</p>
-                    <div className={styles.bottomLinks}>
-                        <span>Confidentialité</span>
-                        <span>Conditions</span>
-                        <span>Plan du site</span>
-                    </div>
+                    <p>© 2026 Easy Services Djerba. Tous droits réservés.</p>
                 </div>
             </div>
         </footer>

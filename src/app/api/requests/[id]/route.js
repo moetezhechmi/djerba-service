@@ -22,6 +22,15 @@ export async function PATCH(request, { params }) {
             return NextResponse.json({ error: 'Request not found' }, { status: 404 });
         }
 
+        // Envoi de l'email de mise à jour (Non-bloquant)
+        try {
+            const { sendStatusUpdateEmail } = await import('@/lib/mail');
+            await sendStatusUpdateEmail(updatedRequest.client_email, updatedRequest);
+            console.log(`Email de mise à jour (${status}) envoyé à ${updatedRequest.client_email}`);
+        } catch (emailError) {
+            console.error('Erreur email update:', emailError);
+        }
+
         return NextResponse.json(updatedRequest);
     } catch (error) {
         console.error('API Error:', error);

@@ -5,6 +5,62 @@
     font-family: var(--font-geist-sans), sans-serif;
 }
 
+/* LOADING STATE */
+.loading {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.loaderIcon {
+    font-size: 4rem;
+    animation: rotateWrench 2s ease-in-out infinite;
+    display: inline-block;
+}
+
+.loadingText {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0f172a;
+    animation: pulseText 1.5s ease-in-out infinite;
+}
+
+@keyframes rotateWrench {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-20deg);
+    }
+
+    75% {
+        transform: rotate(20deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes pulseText {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(0.98);
+    }
+}
+
 /* TUNNEL HEADER */
 .tunnelHeader {
     padding: 1.5rem 0;

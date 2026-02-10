@@ -63,8 +63,8 @@ function ServicesContent() {
             {/* Main Content */}
             <div className={styles.contentContainer}>
                 {loading ? (
-                    <div style={{ padding: '4rem 0' }}>
-                        <div className={styles.spinner}></div>
+                    <div className={styles.loading}>
+                        <div className={styles.loaderIcon}>🛠️</div>
                         <p>Chargement des services...</p>
                     </div>
                 ) : (

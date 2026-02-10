@@ -9,7 +9,7 @@ export default function SignupPage() {
                     <div className={styles.header}>
                         <div className={styles.logoIcon}>🛠️</div>
                         <h1>Créer un compte</h1>
-                        <p>Rejoignez Dipanini dès aujourd'hui</p>
+                        <p>Rejoignez Easy Services Djerba dès aujourd'hui</p>
                     </div>
 
                     <form className={styles.form}>

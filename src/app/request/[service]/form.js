@@ -53,6 +53,10 @@ export default function RequestForm({ serviceKey }) {
     const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [step, serviceKey]);
+
+    useEffect(() => {
         const fetchService = async () => {
             try {
                 const response = await fetch(`/api/services/${serviceKey}`);
@@ -73,13 +77,30 @@ export default function RequestForm({ serviceKey }) {
         setImages([...images, ...newImages]);
     };
 
-    if (loading) return <div className={styles.loading}>Chargement du service...</div>;
+    if (loading) return (
+        <div className={styles.loading}>
+            <div className={styles.loaderIcon}>🛠️</div>
+            <p className={styles.loadingText}>Préparation de vos services...</p>
+        </div>
+    );
     if (!serviceData) return <div className={styles.error}>Service non trouvé.</div>;
 
     const subServices = serviceData.sub_services || [];
 
+    const validateEmail = (email) => {
+        return String(email)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
     const handleNext = () => {
-        if (step === 1 && selectedSubService) {
+        if (step === 1) {
+            if (!selectedSubService) {
+                alert('Veuillez sélectionner un type de prestation.');
+                return;
+            }
             setStep(2);
         } else if (step === 2) {
             setStep(3);
@@ -89,6 +110,23 @@ export default function RequestForm({ serviceKey }) {
     };
 
     const handleSubmit = async () => {
+        // Step 3 validation
+        if (!formData.nom.trim() || !formData.prenom.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.address.trim() || !formData.city.trim() || !formData.zip.trim()) {
+            alert('Veuillez remplir toutes vos coordonnées.');
+            return;
+        }
+
+        if (!validateEmail(formData.email)) {
+            alert('Veuillez entrer une adresse email valide.');
+            return;
+        }
+
+        const phoneClean = formData.phone.replace(/\s/g, '');
+        if (phoneClean.length < 8) {
+            alert('Votre numéro de téléphone semble incomplet.');
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const subService = subServices.find(s => s.id === selectedSubService);
@@ -202,7 +240,12 @@ export default function RequestForm({ serviceKey }) {
                         </div>
                     </div>
 
-                    <button className={styles.closeBtn}>✕</button>
+                    <button
+                        className={styles.closeBtn}
+                        onClick={() => window.location.href = '/services'}
+                    >
+                        ✕
+                    </button>
                 </div>
             </div>
 
@@ -301,7 +344,7 @@ export default function RequestForm({ serviceKey }) {
                                     </div>
                                 </div>
                                 <div className={styles.barActions}>
-                                    <button className={styles.btnPrev} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }} onClick={() => window.location.href = '/'}>✕ Annuler</button>
+                                    <button className={styles.btnPrev} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }} onClick={() => window.location.href = '/services'}>✕ Annuler</button>
                                     <button className={styles.btnNext} onClick={handleNext}>Continuer vers la planification →</button>
                                 </div>
                             </div>
@@ -630,7 +673,7 @@ export default function RequestForm({ serviceKey }) {
                             </div>
                         </div>
                         <p className={styles.modalSubText}>
-                            Un expert de <strong>Dipanini</strong> vous contactera prochainement pour confirmer les détails.
+                            Un expert de <strong>Easy Services Djerba</strong> vous contactera prochainement pour confirmer les détails.
                         </p>
                         <button
                             className={styles.modalBtn}

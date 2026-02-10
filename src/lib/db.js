@@ -53,6 +53,7 @@ const ServiceSchema = new mongoose.Schema({
 
 const ArtisanSchema = new mongoose.Schema({
     name: String,
+    email: { type: String, index: true },
     service_key: { type: String, index: true },
     phone: String,
     status: { type: String, default: 'pending', index: true },

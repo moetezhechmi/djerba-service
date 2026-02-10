@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { dbConnect, Artisan } from '@/lib/db';
+import { sendArtisanApplicationEmail } from '@/lib/mail';
 
 export async function GET(request) {
     try {
@@ -25,18 +26,31 @@ export async function POST(request) {
     try {
         await dbConnect();
         const body = await request.json();
-        const { name, service_key, phone } = body;
+        const { name, email, service_key, phone } = body;
 
-        if (!name || !service_key || !phone) {
+        if (!name || !email || !service_key || !phone) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         const newArtisan = await Artisan.create({
             name,
+            email,
             service_key,
             phone,
             status: 'pending'
         });
+
+        // Send confirmation email to the professional
+        try {
+            await sendArtisanApplicationEmail(email, {
+                name,
+                service_key,
+                phone
+            });
+        } catch (mailError) {
+            console.error('Failed to send application email:', mailError);
+            // We don't fail the request if email fails
+        }
 
         return NextResponse.json({ success: true, id: newArtisan._id });
     } catch (error) {

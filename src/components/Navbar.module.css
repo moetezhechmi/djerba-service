@@ -137,25 +137,47 @@
         top: 80px;
         left: 0;
         right: 0;
-        bottom: 0;
-        background: white;
+        height: calc(100vh - 80px);
+        background: #ffffff !important;
+        /* Force solid white */
         flex-direction: column;
-        padding: 2rem;
-        gap: 2rem;
+        padding: 3rem 2rem;
+        gap: 1.5rem;
         transform: translateX(100%);
-        transition: transform 0.3s ease-in-out;
-        z-index: 1000;
-        align-items: center;
-        border-top: 1px solid var(--border-color);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 2000;
+        align-items: stretch;
+        /* Stretch links for full width clickable area */
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
     }
 
     .linksOpen {
         transform: translateX(0);
     }
 
+    .link {
+        font-size: 1.1rem;
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        width: 100%;
+    }
+
     .auth {
         flex-direction: column;
-        gap: 1.5rem;
+        padding: 1rem;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .login {
+        text-align: center;
+        padding: 0.5rem;
+    }
+
+    .signup {
+        text-align: center;
+        width: 100%;
     }
 
     .hamburger {

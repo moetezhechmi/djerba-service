@@ -34,6 +34,16 @@ export async function POST(request) {
             total_price
         });
 
+        // Envoi de l'email de confirmation (Non-bloquant pour la réponse API)
+        try {
+            const { sendConfirmationEmail } = await import('@/lib/mail');
+            await sendConfirmationEmail(client_email, newRequest);
+            console.log(`Email de confirmation envoyé à ${client_email}`);
+        } catch (emailError) {
+            console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+            // On ne bloque pas la réponse si l'email échoue
+        }
+
         return NextResponse.json({ success: true, id: newRequest._id });
     } catch (error) {
         console.error('API Error:', error);

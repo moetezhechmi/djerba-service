@@ -4,42 +4,38 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './dashboard.module.css';
 
-const ITEMS_PER_PAGE = 8;
-
 export default function AdminDashboard() {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState('requests');
-    const [data, setData] = useState({
-        requests: [],
-        artisans: [],
-        services: []
-    });
+    const [activeTab, setActiveTab] = useState('overview');
     const [loading, setLoading] = useState(true);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-    // Pagination & Search States
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // Editing States
-    const [showModal, setShowModal] = useState(false);
-    const [editingItem, setEditingItem] = useState(null);
+    const [requests, setRequests] = useState([]);
+    const [artisans, setArtisans] = useState([]);
+    const [services, setServices] = useState([]);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [editingService, setEditingService] = useState(null);
 
     const refreshData = async () => {
+        setIsRefreshing(true);
         try {
             const [reqRes, artRes, serRes] = await Promise.all([
                 fetch('/api/requests'),
                 fetch('/api/artisans'),
                 fetch('/api/services')
             ]);
-            const [requests, artisans, services] = await Promise.all([
+            const [reqData, artData, serData] = await Promise.all([
                 reqRes.json(),
                 artRes.json(),
                 serRes.json()
             ]);
-            setData({ requests: requests.reverse(), artisans, services });
+            setRequests(Array.isArray(reqData) ? reqData : []);
+            setArtisans(Array.isArray(artData) ? artData : []);
+            setServices(Array.isArray(serData) ? serData : []);
         } catch (error) {
-            console.error('Refresh error:', error);
+            console.error('Failed to fetch data:', error);
+        } finally {
+            setIsRefreshing(false);
+            setLoading(false);
         }
     };
 
@@ -49,478 +45,506 @@ export default function AdminDashboard() {
             router.push('/admin');
             return;
         }
-        refreshData().then(() => setLoading(false));
+        refreshData();
     }, [router]);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [activeTab, searchTerm]);
 
     const handleLogout = () => {
         localStorage.removeItem('isAdmin');
         router.push('/admin');
     };
 
-    const handleUpdateArtisanStatus = async (id, status) => {
-        try {
-            const res = await fetch(`/api/artisans/${id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            });
-            if (res.ok) refreshData();
-        } catch (error) {
-            console.error('Update status error:', error);
-        }
-    };
-
+    // --- Actions ---
     const handleUpdateRequestStatus = async (id, status) => {
         try {
-            const res = await fetch(`/api/requests/${id}`, {
+            await fetch(`/api/requests/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })
             });
-
-            if (res.ok) {
-                // If confirmed, send WhatsApp message
-                if (status === 'confirmed') {
-                    const req = data.requests.find(r => (r._id || r.id) === id);
-                    if (req) {
-                        const phone = req.client_phone.replace(/\s/g, '');
-                        // Add Tunisia prefix if missing and if it looks like a local number
-                        const formattedPhone = (phone.length === 8) ? `216${phone}` : phone;
-
-                        const message = `Bonjour ${req.client_name}, votre demande pour le service *${req.service_key.toUpperCase()}* (${req.sub_service}) prévue le *${req.date}* à *${req.time}* a été ✅ *confirmée*. Un artisan de Dipanini vous contactera prochainement. Merci de votre confiance !`;
-
-                        const encodedMsg = encodeURIComponent(message);
-                        window.open(`https://wa.me/${formattedPhone}?text=${encodedMsg}`, '_blank');
-                    }
-                }
-                refreshData();
-            }
-        } catch (error) {
-            console.error('Update request status error:', error);
-        }
+            refreshData();
+        } catch (error) { alert('Erreur'); }
     };
 
-    const handleSaveService = async (service) => {
-        const isNew = !data.services.find(s => s.key === service.key);
-        const url = isNew ? '/api/services' : `/api/services/${service.key}`;
-        const method = isNew ? 'POST' : 'PUT';
-
+    const handleUpdateArtisanStatus = async (id, status) => {
         try {
-            const res = await fetch(url, {
-                method,
+            await fetch(`/api/artisans/${id}`, {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(service)
+                body: JSON.stringify({ status })
             });
-            if (res.ok) {
-                setShowModal(false);
-                setEditingItem(null);
-                refreshData();
-            } else {
-                const err = await res.json();
-                alert(err.error || 'Erreur lors de la sauvegarde');
-            }
-        } catch (error) {
-            console.error('Save service error:', error);
-        }
+            refreshData();
+        } catch (error) { alert('Erreur'); }
     };
 
-    const handleDeleteService = async (key) => {
-        if (!confirm('Supprimer ce service ? Cette action est irréversible.')) return;
-        try {
-            const res = await fetch(`/api/services/${key}`, { method: 'DELETE' });
-            if (res.ok) refreshData();
-        } catch (error) {
-            console.error('Delete error:', error);
-        }
-    };
+    const stats = useMemo(() => {
+        const pendingRequests = requests.filter(r => r.status === 'pending').length;
+        const totalRevenue = requests.filter(r => r.status === 'completed').reduce((sum, r) => sum + (r.total_price || 0), 0);
+        const activeArtisans = artisans.filter(a => a.status === 'verified').length;
+        const totalRequests = requests.length;
+        return { pendingRequests, totalRevenue, activeArtisans, totalRequests };
+    }, [requests, artisans]);
 
-    // Filtering logic
-    const filteredData = useMemo(() => {
-        const list = data[activeTab] || [];
-        if (!searchTerm) return list;
-
-        const term = searchTerm.toLowerCase();
-        return list.filter(item => {
-            if (activeTab === 'requests') {
-                return item.client_name?.toLowerCase().includes(term) ||
-                    item.service_key?.toLowerCase().includes(term) ||
-                    item.sub_service?.toLowerCase().includes(term);
-            }
-            if (activeTab === 'artisans') {
-                return item.name?.toLowerCase().includes(term) ||
-                    item.service_key?.toLowerCase().includes(term);
-            }
-            if (activeTab === 'services') {
-                return item.title?.toLowerCase().includes(term) ||
-                    item.desc?.toLowerCase().includes(term);
-            }
-            return false;
-        });
-    }, [data, activeTab, searchTerm]);
-
-    // Pagination logic
-    const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-    const currentItems = filteredData.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    if (loading) return (
-        <div className={styles.loading}>
-            <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚙️</div>
-                <p style={{ fontWeight: 700 }}>Chargement du panneau d'administration...</p>
-            </div>
-        </div>
-    );
-
-    const stats = [
-        { title: 'Demandes', value: data.requests.length, icon: '📋', color: '#eff6ff', textColor: '#3b82f6', trend: '+12%' },
-        { title: 'Artisans', value: data.artisans.length, icon: '👷', color: '#fef3c7', textColor: '#d97706', trend: 'Actifs' },
-        { title: 'Services', value: data.services.length, icon: '🛠️', color: '#f0fdf4', textColor: '#16a34a', trend: 'En ligne' },
-        { title: 'Revenus', value: `${data.requests.reduce((acc, curr) => acc + (curr.total_price || 0), 0)} DT`, icon: '💰', color: '#fce7f3', textColor: '#db2777', trend: 'Total' }
-    ];
+    if (loading) return null;
 
     return (
         <div className={styles.dashboardWrapper}>
-            {/* Sidebar */}
-            <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarClosed : ''}`}>
+            {/* SIDEBAR - ALWAYS VISIBLE */}
+            <aside className={styles.sidebar}>
                 <div className={styles.sidebarHeader}>
-                    <div className={styles.logoIcon}>DP</div>
-                    {isSidebarOpen && <h2 className={styles.sidebarTitle}>Dipanini Admin</h2>}
+                    <span className={styles.logoIcon}>🛠️</span>
+                    <span className={styles.sidebarTitle}>TailAdmin</span>
                 </div>
 
-                <nav className={styles.nav}>
-                    <button
-                        className={`${styles.navItem} ${activeTab === 'requests' ? styles.activeNavItem : ''}`}
-                        onClick={() => setActiveTab('requests')}
-                    >
-                        <span>📋</span> {isSidebarOpen && 'Demandes'}
-                    </button>
-                    <button
-                        className={`${styles.navItem} ${activeTab === 'artisans' ? styles.activeNavItem : ''}`}
-                        onClick={() => setActiveTab('artisans')}
-                    >
-                        <span>👷</span> {isSidebarOpen && 'Professionnels'}
-                    </button>
-                    <button
-                        className={`${styles.navItem} ${activeTab === 'services' ? styles.activeNavItem : ''}`}
-                        onClick={() => setActiveTab('services')}
-                    >
-                        <span>🛠️</span> {isSidebarOpen && 'Services'}
-                    </button>
-                </nav>
+                <div className={styles.navSection}>
+                    <div className={styles.sectionLabel}>Menu Principal</div>
+                    <nav className={styles.nav}>
+                        <button className={`${styles.navItem} ${activeTab === 'overview' ? styles.activeNavItem : ''}`} onClick={() => setActiveTab('overview')}>
+                            <span>📊</span> Dashboard
+                        </button>
+                        <button className={`${styles.navItem} ${activeTab === 'requests' ? styles.activeNavItem : ''}`} onClick={() => setActiveTab('requests')}>
+                            <span>📋</span> Missions
+                        </button>
+                        <button className={`${styles.navItem} ${activeTab === 'artisans' ? styles.activeNavItem : ''}`} onClick={() => setActiveTab('artisans')}>
+                            <span>👷</span> Artisans
+                        </button>
+                        <button className={`${styles.navItem} ${activeTab === 'services' ? styles.activeNavItem : ''}`} onClick={() => setActiveTab('services')}>
+                            <span>⚙️</span> Services
+                        </button>
+                    </nav>
+                </div>
 
                 <button className={`${styles.navItem} ${styles.logoutBtn}`} onClick={handleLogout}>
-                    <span>🚪</span> {isSidebarOpen && 'Déconnexion'}
+                    <span>🚪</span> Déconnexion
                 </button>
             </aside>
 
-            {/* Main Content */}
-            <main className={`${styles.mainContent} ${!isSidebarOpen ? styles.mainContentExpanded : ''}`}>
-                <div className={styles.topBar}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                        <button className={styles.toggleBtn} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-                            {isSidebarOpen ? '⇠' : '⇢'}
-                        </button>
-                        <h1 className={styles.pageTitle}>Dashboard Overview</h1>
-                    </div>
-                    <div className={styles.adminProfile}>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 800, color: '#0f172a' }}>Admin Central</div>
-                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Statut: Super Admin</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stats */}
-                <div className={styles.statsGrid}>
-                    {stats.map((stat, i) => (
-                        <div key={i} className={styles.statCard}>
-                            <div className={styles.statTop}>
-                                <div className={styles.statIcon} style={{ background: stat.color, color: stat.textColor }}>
-                                    {stat.icon}
-                                </div>
-                                <span className={styles.statTrend}>{stat.trend}</span>
-                            </div>
-                            <div className={styles.statInfo}>
-                                <h3>{stat.title}</h3>
-                                <div className={styles.statNumber}>{stat.value}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Data Table */}
-                <div className={styles.tableCard}>
-                    <div className={styles.tableHeader}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                            <h2 className={styles.tableTitle}>
-                                {activeTab === 'requests' && 'Journal des Demandes'}
-                                {activeTab === 'artisans' && 'Annuaire des Pros'}
-                                {activeTab === 'services' && 'Gestion du Catalogue'}
-                            </h2>
-                            {activeTab === 'services' && (
-                                <button className={styles.btnAdd} onClick={() => { setEditingItem(null); setShowModal(true); }}>
-                                    + Ajouter un Service
-                                </button>
-                            )}
-                        </div>
-                        <div className={styles.searchBar}>
+            {/* MAIN CONTENT AREA */}
+            <main className={styles.mainContent}>
+                {/* TOP HEADER */}
+                <header className={styles.topHeader}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <div className={styles.searchBox}>
                             <span>🔍</span>
-                            <input
-                                type="text"
-                                placeholder="Rechercher..."
-                                className={styles.searchInput}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                            <input type="text" placeholder="Rechercher une mission, un artisan..." />
                         </div>
                     </div>
 
-                    {activeTab === 'requests' && (
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th>Client</th>
-                                    <th>Prestation</th>
-                                    <th>Planification</th>
-                                    <th>Montant</th>
-                                    <th>Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentItems.length > 0 ? currentItems.map((req) => (
-                                    <tr key={req.id}>
-                                        <td>
-                                            <span className={styles.clientName}>{req.client_name}</span>
-                                            <span className={styles.clientSub}>{req.client_phone}</span>
-                                        </td>
-                                        <td>
-                                            <div style={{ fontWeight: 700 }}>{req.service_key.toUpperCase()}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{req.sub_service}</div>
-                                        </td>
-                                        <td>
-                                            <div style={{ fontWeight: 600 }}>{req.date}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{req.time} ({req.frequency})</div>
-                                        </td>
-                                        <td><span className={styles.priceTag}>{req.total_price} DT</span></td>
-                                        <td>
-                                            <select
-                                                className={styles.statusSelect}
-                                                value={req.status || 'pending'}
-                                                onChange={(e) => handleUpdateRequestStatus(req._id || req.id, e.target.value)}
-                                            >
-                                                <option value="pending">⏳ En attente</option>
-                                                <option value="confirmed">✅ Confirmé</option>
-                                                <option value="completed">🎉 Terminé</option>
-                                                <option value="cancelled">❌ Annulé</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="5" className={styles.emptyState}>Aucun résultat trouvé.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    )}
-
-                    {activeTab === 'artisans' && (
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th>Nom du Pro</th>
-                                    <th>Activité</th>
-                                    <th>Coordonnées</th>
-                                    <th>Statut de Validation</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentItems.length > 0 ? currentItems.map((art) => (
-                                    <tr key={art._id}>
-                                        <td><span className={styles.clientName}>{art.name}</span></td>
-                                        <td><span className={styles.statusBadge} style={{ background: '#f1f5f9', color: '#475569' }}>{art.service_key}</span></td>
-                                        <td>{art.phone}</td>
-                                        <td>
-                                            <select
-                                                className={styles.statusSelect}
-                                                value={art.status || 'pending'}
-                                                onChange={(e) => handleUpdateArtisanStatus(art._id, e.target.value)}
-                                            >
-                                                <option value="pending">⏳ En attente</option>
-                                                <option value="verified">✅ Vérifié</option>
-                                                <option value="suspended">🚫 Suspendu</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="4" className={styles.emptyState}>Aucun professionnel trouvé.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    )}
-
-                    {activeTab === 'services' && (
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th>Catégorie</th>
-                                    <th>Description</th>
-                                    <th>Outils</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentItems.map((ser) => (
-                                    <tr key={ser.key}>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                <span className={styles.statIcon} style={{ width: 40, height: 40, fontSize: '1.2rem', background: '#f8fafc' }}>{ser.icon}</span>
-                                                <div className={styles.clientName}>{ser.title}</div>
-                                            </div>
-                                        </td>
-                                        <td><p style={{ maxWidth: 300, fontSize: '0.85rem' }}>{ser.desc}</p></td>
-                                        <td>
-                                            <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                                <button className={styles.actionIcon} onClick={() => { setEditingItem(ser); setShowModal(true); }}>✏️</button>
-                                                <button className={styles.actionIcon} onClick={() => handleDeleteService(ser.key)}>🗑️</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-
-                    {/* Pagination Bar */}
-                    {totalPages > 1 && (
-                        <div className={styles.pagination}>
-                            <div className={styles.paginationInfo}>
-                                Affichage de {((currentPage - 1) * ITEMS_PER_PAGE) + 1} à {Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)} sur {filteredData.length} résultats
-                            </div>
-                            <div className={styles.paginationBtns}>
-                                <button className={styles.pageBtn} onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>‹</button>
-                                {[...Array(totalPages)].map((_, i) => (
-                                    <button key={i} className={`${styles.pageBtn} ${currentPage === i + 1 ? styles.activePageBtn : ''}`} onClick={() => setCurrentPage(i + 1)}>
-                                        {i + 1}
-                                    </button>
-                                ))}
-                                <button className={styles.pageBtn} onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>›</button>
-                            </div>
+                    <div className={styles.userMenu}>
+                        <div className={styles.userRole}>
+                            <span className={styles.userName}>Administrateur</span>
+                            <span className={styles.userTitle}>Gestionnaire</span>
                         </div>
-                    )}
+                        <div className={styles.avatar}>A</div>
+                    </div>
+                </header>
+
+                <div className={styles.pageContent}>
+                    {/* STATS */}
+                    <div className={styles.statsGrid}>
+                        <StatCard icon="💰" value={`${stats.totalRevenue} DT`} title="Total Ventes" />
+                        <StatCard icon="📋" value={stats.totalRequests} title="Total Missions" />
+                        <StatCard icon="⏳" value={stats.pendingRequests} title="En attente" />
+                        <StatCard icon="👷" value={stats.activeArtisans} title="Pros Actifs" />
+                    </div>
+
+                    {/* CONTENT COMPONENTS */}
+                    {activeTab === 'overview' && <RecentMissions requests={requests} onUpdate={handleUpdateRequestStatus} />}
+                    {activeTab === 'requests' && <MissionsTable requests={requests} onUpdate={handleUpdateRequestStatus} />}
+                    {activeTab === 'artisans' && <ArtisansTable artisans={artisans} onUpdate={handleUpdateArtisanStatus} />}
+                    {activeTab === 'services' && <ServicesList services={services} />}
                 </div>
             </main>
+        </div>
+    );
+}
 
-            {/* Service Modal */}
-            {showModal && (
-                <ServiceModal
-                    item={editingItem}
-                    onClose={() => setShowModal(false)}
-                    onSave={handleSaveService}
-                />
+function StatCard({ icon, value, title }) {
+    return (
+        <div className={styles.statCard}>
+            <div className={styles.statIconBox}>{icon}</div>
+            <div className={styles.statValue}>{value}</div>
+            <div className={styles.statTitle}>{title}</div>
+        </div>
+    );
+}
+
+function RecentMissions({ requests, onUpdate }) {
+    const ITEMS_PER_PAGE = 5;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(requests.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const displayedRequests = requests.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    return (
+        <div className={styles.dataCard}>
+            <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Dernières Missions</h2>
+            </div>
+            <table className={styles.table}>
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Date</th>
+                        <th>Service</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {displayedRequests.map(req => (
+                        <tr key={req._id}>
+                            <td><strong>{req.client_name}</strong></td>
+                            <td>{req.date}</td>
+                            <td>{req.sub_service}</td>
+                            <td><span className={`${styles.badge} ${styles[req.status] || styles.pending}`}>{req.status}</span></td>
+                            <td>
+                                <select
+                                    className={styles.btnAction}
+                                    style={{ background: '#F1F5F9', color: '#1C2434', border: '1px solid #E2E8F0' }}
+                                    value={req.status}
+                                    onChange={(e) => onUpdate(req._id, e.target.value)}
+                                >
+                                    <option value="pending">En attente</option>
+                                    <option value="confirmed">Confirmé</option>
+                                    <option value="completed">Terminé</option>
+                                    <option value="cancelled">Annulé</option>
+                                </select>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className={styles.pagination}>
+                    <button
+                        className={styles.pageBtn}
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                        Précédent
+                    </button>
+
+                    <div className={styles.pageNumbers}>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
+                            <button
+                                key={num}
+                                className={`${styles.pageBtn} ${currentPage === num ? styles.activePage : ''}`}
+                                onClick={() => setCurrentPage(num)}
+                            >
+                                {num}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        className={styles.pageBtn}
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                        Suivant
+                    </button>
+                </div>
             )}
         </div>
     );
 }
 
-function ServiceModal({ item, onClose, onSave }) {
-    const [formData, setFormData] = useState(item || {
-        key: '',
-        title: '',
-        desc: '',
-        icon: '🛠️',
-        bgColor: '#eff6ff',
-        iconColor: '#3b82f6',
-        sub_services: []
-    });
+function MissionsTable({ requests, onUpdate }) {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 8;
 
-    const addSubService = () => {
-        setFormData({
-            ...formData,
-            sub_services: [
-                ...formData.sub_services,
-                { id: Date.now().toString(), title: '', desc: '', price: 0, unit: 'FORFAIT', icon: '⚡' }
-            ]
-        });
-    };
+    // Filter logic
+    const filteredRequests = useMemo(() => {
+        return requests.filter(req => {
+            const matchesSearch =
+                req.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                req.sub_service?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const removeSubService = (id) => {
-        setFormData({
-            ...formData,
-            sub_services: formData.sub_services.filter(s => s.id !== id)
-        });
-    };
+            const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
 
-    const updateSubService = (id, field, value) => {
-        setFormData({
-            ...formData,
-            sub_services: formData.sub_services.map(s => s.id === id ? { ...s, [field]: value } : s)
+            return matchesSearch && matchesStatus;
         });
-    };
+    }, [requests, searchTerm, statusFilter]);
+
+    // Reset pagination on filter change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
+
+    const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const displayedRequests = filteredRequests.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     return (
-        <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-                <div className={styles.modalHeader}>
-                    <h2 className={styles.modalTitle}>{item ? 'Modifier Service' : 'Nouveau Service'}</h2>
-                    <button className={styles.closeBtn} onClick={onClose}>×</button>
-                </div>
+        <div className={styles.dataCard}>
+            <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <h2 className={styles.cardTitle}>Gestion des Missions</h2>
 
-                <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Clé Unique (ex: plomberie)</label>
-                    <input
-                        className={styles.formInput}
-                        value={formData.key}
-                        onChange={e => setFormData({ ...formData, key: e.target.value })}
-                        disabled={!!item}
-                    />
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Titre</label>
-                    <input className={styles.formInput} value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Description</label>
-                    <textarea className={styles.formTextarea} rows="2" value={formData.desc} onChange={e => setFormData({ ...formData, desc: e.target.value })} />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div className={styles.formGroup}>
-                        <label className={styles.formLabel}>Icône Emoji</label>
-                        <input className={styles.formInput} value={formData.icon} onChange={e => setFormData({ ...formData, icon: e.target.value })} />
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    {/* Search Input */}
+                    <div className={styles.searchBox} style={{ border: '1px solid #E2E8F0', padding: '0.4rem 0.8rem', borderRadius: '4px', width: '250px' }}>
+                        <span>🔍</span>
+                        <input
+                            type="text"
+                            placeholder="Client ou service..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ fontSize: '0.85rem' }}
+                        />
                     </div>
-                </div>
 
-                <div style={{ marginTop: '2rem' }}>
-                    <h3 className={styles.formLabel}>Sous-services / Prestations</h3>
-                    {formData.sub_services.map((sub, idx) => (
-                        <div key={sub.id} className={styles.subItem}>
-                            <button className={styles.removeSub} onClick={() => removeSubService(sub.id)}>×</button>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginBottom: '0.5rem' }}>
-                                <input placeholder="Nom prestation" className={styles.formInput} value={sub.title} onChange={e => updateSubService(sub.id, 'title', e.target.value)} />
-                                <input placeholder="Prix" type="number" className={styles.formInput} value={sub.price} onChange={e => updateSubService(sub.id, 'price', Number(e.target.value))} />
-                            </div>
-                            <input placeholder="Unité (ex: FORFAIT, /h)" className={styles.formInput} value={sub.unit} onChange={e => updateSubService(sub.id, 'unit', e.target.value)} />
-                        </div>
-                    ))}
-                    <button className={styles.btnAddSub} onClick={addSubService}>+ Ajouter une prestation</button>
-                </div>
-
-                <div className={styles.modalActions}>
-                    <button className={styles.btnSecondary} onClick={onClose}>Annuler</button>
-                    <button className={styles.btnPrimary} onClick={() => onSave(formData)}>Enregistrer</button>
+                    {/* Status Dropdown */}
+                    <select
+                        className={styles.btnAction}
+                        style={{ background: '#fff', color: '#1C2434', border: '1px solid #E2E8F0', fontSize: '0.85rem' }}
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="all">Tous les statuts</option>
+                        <option value="pending">En attente</option>
+                        <option value="confirmed">Confirmé</option>
+                        <option value="completed">Terminé</option>
+                        <option value="cancelled">Annulé</option>
+                    </select>
                 </div>
             </div>
+
+            <table className={styles.table}>
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Date</th>
+                        <th>Service</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {displayedRequests.length > 0 ? displayedRequests.map(req => (
+                        <tr key={req._id}>
+                            <td><strong>{req.client_name}</strong></td>
+                            <td>{req.date}</td>
+                            <td>{req.sub_service}</td>
+                            <td><span className={`${styles.badge} ${styles[req.status] || styles.pending}`}>{req.status}</span></td>
+                            <td>
+                                <select
+                                    className={styles.btnAction}
+                                    style={{ background: '#F1F5F9', color: '#1C2434', border: '1px solid #E2E8F0', padding: '0.3rem' }}
+                                    value={req.status}
+                                    onChange={(e) => onUpdate(req._id, e.target.value)}
+                                >
+                                    <option value="pending">En attente</option>
+                                    <option value="confirmed">Confirmé</option>
+                                    <option value="completed">Terminé</option>
+                                    <option value="cancelled">Annulé</option>
+                                </select>
+                            </td>
+                        </tr>
+                    )) : (
+                        <tr>
+                            <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                                Aucune mission correspondant à vos filtres.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className={styles.pagination}>
+                    <button
+                        className={styles.pageBtn}
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                        Précédent
+                    </button>
+
+                    <div className={styles.pageNumbers}>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
+                            <button
+                                key={num}
+                                className={`${styles.pageBtn} ${currentPage === num ? styles.activePage : ''}`}
+                                onClick={() => setCurrentPage(num)}
+                            >
+                                {num}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        className={styles.pageBtn}
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                        Suivant
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ArtisansTable({ artisans, onUpdate }) {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [specialtyFilter, setSpecialtyFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 8;
+
+    // Get unique specialties for the filter dropdown
+    const specialties = useMemo(() => {
+        const specs = new Set(artisans.map(a => a.service_key).filter(Boolean));
+        return Array.from(specs).sort();
+    }, [artisans]);
+
+    // Filter logic
+    const filteredArtisans = useMemo(() => {
+        return artisans.filter(art => {
+            const matchesSearch = art.name?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = statusFilter === 'all' || art.status === statusFilter;
+            const matchesSpecialty = specialtyFilter === 'all' || art.service_key === specialtyFilter;
+
+            return matchesSearch && matchesStatus && matchesSpecialty;
+        });
+    }, [artisans, searchTerm, statusFilter, specialtyFilter]);
+
+    // Reset pagination on filter change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, specialtyFilter]);
+
+    const totalPages = Math.ceil(filteredArtisans.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const displayedArtisans = filteredArtisans.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    return (
+        <div className={styles.dataCard}>
+            <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <h2 className={styles.cardTitle}>Artisans</h2>
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Search Input */}
+                    <div className={styles.searchBox} style={{ border: '1px solid #E2E8F0', padding: '0.4rem 0.8rem', borderRadius: '4px', width: '200px' }}>
+                        <span>🔍</span>
+                        <input
+                            type="text"
+                            placeholder="Rechercher un nom..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ fontSize: '0.85rem' }}
+                        />
+                    </div>
+
+                    {/* Specialty Filter */}
+                    <select
+                        className={styles.btnAction}
+                        style={{ background: '#fff', color: '#1C2434', border: '1px solid #E2E8F0', fontSize: '0.85rem' }}
+                        value={specialtyFilter}
+                        onChange={(e) => setSpecialtyFilter(e.target.value)}
+                    >
+                        <option value="all">Toutes spécialités</option>
+                        {specialties.map(spec => (
+                            <option key={spec} value={spec}>{spec}</option>
+                        ))}
+                    </select>
+
+                    {/* Status Dropdown */}
+                    <select
+                        className={styles.btnAction}
+                        style={{ background: '#fff', color: '#1C2434', border: '1px solid #E2E8F0', fontSize: '0.85rem' }}
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="all">Tous les statuts</option>
+                        <option value="pending">En attente</option>
+                        <option value="verified">Vérifié</option>
+                    </select>
+                </div>
+            </div>
+            <table className={styles.table}>
+                <thead>
+                    <tr><th>Nom</th><th>Spécialité</th><th>Téléphone</th><th>Statut</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {displayedArtisans.length > 0 ? displayedArtisans.map(art => (
+                        <tr key={art._id}>
+                            <td><strong>{art.name}</strong></td>
+                            <td>{art.service_key}</td>
+                            <td>{art.phone || 'Non renseigné'}</td>
+                            <td><span className={`${styles.badge} ${art.status === 'verified' ? styles.completed : styles.pending}`}>{art.status}</span></td>
+                            <td>
+                                <button className={styles.btnAction} style={{ padding: '0.4rem 0.8rem' }} onClick={() => onUpdate(art._id, art.status === 'verified' ? 'pending' : 'verified')}>
+                                    {art.status === 'verified' ? 'Suspendre' : 'Valider'}
+                                </button>
+                            </td>
+                        </tr>
+                    )) : (
+                        <tr>
+                            <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                                Aucun artisan correspondant à ces critères.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className={styles.pagination}>
+                    <button
+                        className={styles.pageBtn}
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                        Précédent
+                    </button>
+
+                    <div className={styles.pageNumbers}>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
+                            <button
+                                key={num}
+                                className={`${styles.pageBtn} ${currentPage === num ? styles.activePage : ''}`}
+                                onClick={() => setCurrentPage(num)}
+                            >
+                                {num}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        className={styles.pageBtn}
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                        Suivant
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ServicesList({ services }) {
+    return (
+        <div className={styles.servicesGrid}>
+            {services.map(s => (
+                <div key={s.key} className={styles.serviceItem}>
+                    <div className={styles.serviceInfo}>
+                        <span style={{ fontSize: '1.5rem' }}>{s.icon}</span>
+                        <div>
+                            <div style={{ fontWeight: 600 }}>{s.title}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748B' }}>{s.sub_services?.length} prestations</div>
+                        </div>
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }

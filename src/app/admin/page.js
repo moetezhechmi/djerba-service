@@ -49,9 +49,9 @@ export default function AdminLoginPage() {
         <div className={styles.adminWrapper}>
             <div className={styles.loginCard}>
                 <div className={styles.header}>
-                    <span className={styles.logo}>DP</span>
+                    <span className={styles.logo}>ES</span>
                     <h1 className={styles.title}>Administration</h1>
-                    <p className={styles.subtitle}>Connectez-vous pour gérer Dipanini</p>
+                    <p className={styles.subtitle}>Connectez-vous pour gérer Easy Services Djerba</p>
                 </div>
 
                 <form className={styles.form} onSubmit={handleLogin}>

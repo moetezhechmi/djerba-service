@@ -12,7 +12,7 @@ export default function PressPage() {
                     Cette page est actuellement <strong>en cours de développement</strong>.
                 </p>
                 <p className={styles.desc}>
-                    Nous préparons un espace dédié aux journalistes et partenaires pour partager l'actualité de <strong>Dipanini</strong>.
+                    Nous préparons un espace dédié aux journalistes et partenaires pour partager l'actualité de <strong>Easy Services Djerba</strong>.
                 </p>
                 <div className={styles.badge}>Bientôt disponible</div>
                 <Link href="/" className={styles.btnHome}>

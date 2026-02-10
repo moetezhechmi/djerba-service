@@ -14,7 +14,7 @@ export default function Navbar() {
                 <div className={styles.logoArea}>
                     <Link href="/" className={styles.logo} onClick={() => setIsOpen(false)}>
                         <div className={styles.logoIcon}>🛠️</div>
-                        <span>Dipanini</span>
+                        <span>Easy Services Djerba</span>
                     </Link>
                 </div>
 
@@ -34,7 +34,6 @@ export default function Navbar() {
                     <Link href="/devenir-pro" className={styles.link} onClick={() => setIsOpen(false)}>Devenir un Pro</Link>
 
                     <div className={styles.auth}>
-                        <Link href="/login" className={styles.login} onClick={() => setIsOpen(false)}>Connexion</Link>
                         <Link href="/services" className={styles.signup} onClick={() => setIsOpen(false)}>Réserver</Link>
                     </div>
                 </div>

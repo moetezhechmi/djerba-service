@@ -266,7 +266,7 @@
 }
 
 .ctaBanner {
-    background: linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7)), url('https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=2000&auto=format&fit=crop');
+    background: linear-gradient(to right, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.4)), url('/pro-team.png');
     background-size: cover;
     background-position: center;
     border-radius: 30px;

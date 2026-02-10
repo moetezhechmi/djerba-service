@@ -7,6 +7,7 @@ import styles from './pro.module.css';
 export default function DevenirProPage() {
     const [formData, setFormData] = useState({
         name: '',
+        email: '',
         service_key: '',
         phone: ''
     });
@@ -27,11 +28,33 @@ export default function DevenirProPage() {
         fetchServices();
     }, []);
 
+    const validateEmail = (email) => {
+        return String(email)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.name || !formData.service_key || !formData.phone) {
-            alert('Veuillez remplir tous les champs.');
+        // Check if all fields are present
+        if (!formData.name.trim() || !formData.email.trim() || !formData.service_key || !formData.phone.trim()) {
+            alert('Veuillez remplir tous les champs obligatoires.');
+            return;
+        }
+
+        // Email validation
+        if (!validateEmail(formData.email)) {
+            alert('Veuillez entrer une adresse email valide.');
+            return;
+        }
+
+        // Phone validation (basic)
+        const phoneClean = formData.phone.replace(/\s/g, '');
+        if (phoneClean.length < 8) {
+            alert('Le numéro de téléphone doit contenir au moins 8 chiffres.');
             return;
         }
 
@@ -45,7 +68,6 @@ export default function DevenirProPage() {
 
             if (response.ok) {
                 setShowSuccess(true);
-                setFormData({ name: '', service_key: '', phone: '' });
             } else {
                 const data = await response.json();
                 alert(data.error || 'Une erreur est survenue.');
@@ -96,6 +118,17 @@ export default function DevenirProPage() {
                                         className={styles.input}
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Email</label>
+                                    <input
+                                        type="email"
+                                        placeholder="votre@email.com"
+                                        className={styles.input}
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         required
                                     />
                                 </div>
@@ -206,7 +239,7 @@ export default function DevenirProPage() {
                             </div>
                         </div>
                         <p className={styles.modalSubText}>
-                            Un responsable de <strong>Dipanini</strong> vous contactera par téléphone pour valider votre profil.
+                            Un responsable de <strong>Easy Services Djerba</strong> vous contactera par téléphone pour valider votre profil.
                         </p>
                         <button
                             className={styles.modalBtn}
