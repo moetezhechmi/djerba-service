@@ -12,6 +12,7 @@ export default function DevenirProPage() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [services, setServices] = useState([]);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         const fetchServices = async () => {
@@ -43,9 +44,8 @@ export default function DevenirProPage() {
             });
 
             if (response.ok) {
-                alert('Votre inscription a été reçue ! Nous vous contacterons bientôt.');
+                setShowSuccess(true);
                 setFormData({ name: '', service_key: '', phone: '' });
-                window.location.href = '/';
             } else {
                 const data = await response.json();
                 alert(data.error || 'Une erreur est survenue.');
@@ -184,6 +184,39 @@ export default function DevenirProPage() {
                 </div>
             </section>
 
+            {/* Success Modal */}
+            {showSuccess && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modal}>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.successIcon}>🚀</div>
+                        </div>
+                        <h2 className={styles.modalTitle}>Inscription Reçue !</h2>
+                        <p className={styles.modalText}>
+                            Bienvenue dans le réseau, <strong>{formData.name || 'Pro'}</strong> ! Votre demande de partenariat a été transmise à notre équipe.
+                        </p>
+                        <div className={styles.infoCard}>
+                            <div className={styles.infoLine}>
+                                <span>📋 Statut :</span>
+                                <strong style={{ color: '#f59e0b' }}>En cours d'examen</strong>
+                            </div>
+                            <div className={styles.infoLine}>
+                                <span>⏳ Délai :</span>
+                                <strong>Moins de 24 heures</strong>
+                            </div>
+                        </div>
+                        <p className={styles.modalSubText}>
+                            Un responsable de <strong>Dipanini</strong> vous contactera par téléphone pour valider votre profil.
+                        </p>
+                        <button
+                            className={styles.modalBtn}
+                            onClick={() => window.location.href = '/'}
+                        >
+                            Retour à l'accueil
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

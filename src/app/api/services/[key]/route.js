@@ -5,7 +5,7 @@ export async function GET(request, { params }) {
     try {
         await dbConnect();
         const { key } = await params;
-        const service = await Service.findOne({ key });
+        const service = await Service.findOne({ key }).lean();
 
         if (!service) {
             return NextResponse.json({ error: 'Service not found' }, { status: 404 });

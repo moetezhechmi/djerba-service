@@ -53,15 +53,15 @@ const ServiceSchema = new mongoose.Schema({
 
 const ArtisanSchema = new mongoose.Schema({
     name: String,
-    service_key: String,
+    service_key: { type: String, index: true },
     phone: String,
-    status: { type: String, default: 'pending' },
-    created_at: { type: Date, default: Date.now }
+    status: { type: String, default: 'pending', index: true },
+    created_at: { type: Date, default: Date.now, index: true }
 });
 
 const RequestSchema = new mongoose.Schema({
     // Step 1: Service
-    service_key: String,
+    service_key: { type: String, index: true },
     sub_service: String,
     service_price: Number,
     service_unit: String,
@@ -69,13 +69,13 @@ const RequestSchema = new mongoose.Schema({
     images: [String],
 
     // Step 2: Planning
-    date: String,
+    date: { type: String, index: true },
     time: String,
     frequency: String,
 
     // Step 3: Client Info & Address
     client_name: String,
-    client_email: String,
+    client_email: { type: String, index: true },
     client_phone: String,
     client_address: String,
     client_city: String,
@@ -84,9 +84,9 @@ const RequestSchema = new mongoose.Schema({
     // Payment & Status
     payment_method: String,
     total_price: Number,
-    status: { type: String, default: 'pending' },
-    artisan_id: String,
-    created_at: { type: Date, default: Date.now }
+    status: { type: String, default: 'pending', index: true },
+    artisan_id: { type: String, index: true },
+    created_at: { type: Date, default: Date.now, index: true }
 });
 
 // Safe model export for Next.js (ensures schema updates aren't blocked by model caching)

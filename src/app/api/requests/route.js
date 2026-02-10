@@ -44,19 +44,19 @@ export async function POST(request) {
 export async function GET() {
     try {
         await dbConnect();
-        const requests = await Request.find({}).lean();
-        const artisans = await Artisan.find({}).lean();
+        // Use sort at DB level
+        const requests = await Request.find({}).sort({ created_at: -1 }).lean();
+        // Only fetch artisan names and IDs
+        const artisans = await Artisan.find({}, { name: 1, _id: 1 }).lean();
 
-        // Map artisan names
-        const enrichedRequests = requests.map(r => {
-            // Match using _id since numeric id is removed
-            const artisan = artisans.find(a => a._id.toString() === r.artisan_id?.toString());
-            return {
-                ...r,
-                id: r._id, // Ensure frontend receives 'id'
-                artisan_name: artisan ? artisan.name : null
-            };
-        }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        // Create a map for O(1) lookup
+        const artisanMap = new Map(artisans.map(a => [a._id.toString(), a.name]));
+
+        const enrichedRequests = requests.map(r => ({
+            ...r,
+            id: r._id,
+            artisan_name: r.artisan_id ? (artisanMap.get(r.artisan_id.toString()) || null) : null
+        }));
 
         return NextResponse.json(enrichedRequests);
     } catch (error) {

@@ -9,9 +9,9 @@ export async function GET(request) {
 
         let artisans;
         if (service) {
-            artisans = await Artisan.find({ service_key: service });
+            artisans = await Artisan.find({ service_key: service }).sort({ created_at: -1 }).lean();
         } else {
-            artisans = await Artisan.find({});
+            artisans = await Artisan.find({}).sort({ created_at: -1 }).lean();
         }
 
         return NextResponse.json(artisans);

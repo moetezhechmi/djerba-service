@@ -50,6 +50,7 @@ export default function RequestForm({ serviceKey }) {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         const fetchService = async () => {
@@ -122,8 +123,7 @@ export default function RequestForm({ serviceKey }) {
             });
 
             if (response.ok) {
-                alert('Demande confirmée avec succès !');
-                window.location.href = '/';
+                setShowSuccess(true);
             } else {
                 alert('Une erreur est survenue lors de la confirmation.');
             }
@@ -371,7 +371,7 @@ export default function RequestForm({ serviceKey }) {
                                     <div className={styles.timeGroupLabel}>SOIR</div>
                                     <div className={styles.timeGrid}>
                                         {TIME_SLOTS.soir.map(t => (
-                                            <button key={t} className={`${styles.timeBtn} ${selectedTime === t ? styles.selectedTime : ''}`} onClick={() => setSelectedTime(t)} disabled style={{ opacity: 0.5 }}>{t}</button>
+                                            <button key={t} className={`${styles.timeBtn} ${selectedTime === t ? styles.selectedTime : ''}`} onClick={() => setSelectedTime(t)}>{t}</button>
                                         ))}
                                     </div>
                                 </div>
@@ -603,6 +603,44 @@ export default function RequestForm({ serviceKey }) {
                     </div>
                 )}
             </div>
+
+            {/* Success Modal */}
+            {showSuccess && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modal}>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.successIcon}>✓</div>
+                        </div>
+                        <h2 className={styles.modalTitle}>Demande Confirmée !</h2>
+                        <p className={styles.modalText}>
+                            Merci <strong>{formData.prenom}</strong>, votre demande pour <strong>{subServices.find(s => s.id === selectedSubService)?.title}</strong> a bien été enregistrée.
+                        </p>
+                        <div className={styles.recapCard}>
+                            <div className={styles.recapLine}>
+                                <span>📅 Date :</span>
+                                <strong>{selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</strong>
+                            </div>
+                            <div className={styles.recapLine}>
+                                <span>🕒 Heure :</span>
+                                <strong>{selectedTime}</strong>
+                            </div>
+                            <div className={styles.recapLine}>
+                                <span>📍 Ville :</span>
+                                <strong>{formData.city}</strong>
+                            </div>
+                        </div>
+                        <p className={styles.modalSubText}>
+                            Un expert de <strong>Dipanini</strong> vous contactera prochainement pour confirmer les détails.
+                        </p>
+                        <button
+                            className={styles.modalBtn}
+                            onClick={() => window.location.href = '/'}
+                        >
+                            Retour à l'accueil
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

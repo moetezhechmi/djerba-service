@@ -4,7 +4,7 @@ import { dbConnect, Service } from '@/lib/db';
 export async function GET() {
     try {
         await dbConnect();
-        const services = await Service.find({});
+        const services = await Service.find({}).lean();
         return NextResponse.json(services);
     } catch (error) {
         console.error('API Error:', error);
