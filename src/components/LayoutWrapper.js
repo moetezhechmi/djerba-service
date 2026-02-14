@@ -8,7 +8,9 @@ export default function LayoutWrapper({ children }) {
     const pathname = usePathname();
     const isAdmin = pathname.startsWith('/admin');
 
-    if (isAdmin) {
+    const isCleanLayout = pathname.startsWith('/admin');
+
+    if (isCleanLayout) {
         return <>{children}</>;
     }
 

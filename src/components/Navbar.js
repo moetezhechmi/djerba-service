@@ -13,8 +13,8 @@ export default function Navbar() {
             <div className={styles.container}>
                 <div className={styles.logoArea}>
                     <Link href="/" className={styles.logo} onClick={() => setIsOpen(false)}>
-                        <div className={styles.logoIcon}>🛠️</div>
-                        <span>Easy Services Djerba</span>
+                        <img src="/logo.jpeg" alt="Easy Services Djerba" className={styles.logoImg} />
+                        <span className={styles.logoText}>Easy Services Djerba</span>
                     </Link>
                 </div>
 

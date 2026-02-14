@@ -113,20 +113,21 @@ function ServicesContent() {
             </div>
 
             {/* Sticky Footer */}
+            {/* Sticky Bottom Bar (Matching RequestForm style) */}
             {selectedService && (
-                <div className={styles.stickyFooter}>
-                    <div className={styles.footerInfo}>
-                        <div className={styles.footerIcon} style={{ background: selectedService.bgColor, color: selectedService.iconColor }}>
+                <div className={styles.stickyBar}>
+                    <div className={styles.recap}>
+                        <div className={styles.recapIcon} style={{ background: selectedService.bgColor, color: selectedService.iconColor }}>
                             {selectedService.icon}
                         </div>
-                        <div className={styles.footerText}>
+                        <div className={styles.recapText}>
                             <strong>{selectedService.title}</strong>
-                            <p>Catégorie sélectionnée</p>
+                            <div>Catégorie sélectionnée</div>
                         </div>
                     </div>
-                    <div className={styles.footerActions}>
-                        <button className={styles.btnCancel} onClick={() => setSelectedService(null)}>Annuler</button>
-                        <button className={styles.btnNext} onClick={handleNext}>Suivant <span>→</span></button>
+                    <div className={styles.barActions}>
+                        <button className={styles.btnPrev} onClick={() => setSelectedService(null)}>✕ Annuler</button>
+                        <button className={styles.btnNext} onClick={handleNext}>Suivant <span style={{ marginLeft: '4px' }}>→</span></button>
                     </div>
                 </div>
             )}

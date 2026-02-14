@@ -131,7 +131,7 @@ export default function RequestForm({ serviceKey }) {
         try {
             const subService = subServices.find(s => s.id === selectedSubService);
             const basePrice = subService?.price || 0;
-            const extraFee = frequency === 'urgent' ? 20 : 0;
+            const extraFee = frequency === 'urgent' ? 15 : 0;
             const totalPrice = basePrice + extraFee;
 
             const payload = {
@@ -271,10 +271,7 @@ export default function RequestForm({ serviceKey }) {
                                     </div>
                                     <h3 className={styles.cardTitle}>{item.title}</h3>
                                     <p className={styles.cardDesc}>{item.desc}</p>
-                                    <div className={styles.cardFooter}>
-                                        <span className={styles.price}>{item.price} DT</span>
-                                        <span className={styles.unit}>{item.unit}</span>
-                                    </div>
+                                    {/* Price removed as per user request */}
                                 </div>
                             ))}
                         </div>
@@ -437,8 +434,10 @@ export default function RequestForm({ serviceKey }) {
                                     >
                                         <div className={styles.radio}>{frequency === 'urgent' && <div className={styles.radioInner} />}</div>
                                         <div>
-                                            <div className={styles.freqTitle}>Urgent 🚨</div>
-                                            <div className={styles.freqDesc}>Intervention prioritaire dans les 24h (+20 DT)</div>
+                                            <div className={styles.freqTitle}>
+                                                Urgent 🚨 <span className={styles.urgentBadge}>+15 DT</span>
+                                            </div>
+                                            <div className={styles.freqDesc}>Intervention prioritaire dans les 24h</div>
                                         </div>
                                     </div>
                                 </div>
