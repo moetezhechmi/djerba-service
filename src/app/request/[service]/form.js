@@ -329,7 +329,7 @@ export default function RequestForm({ serviceKey }) {
                         </div>
 
                         {/* Sticky Bottom Bar for Step 1 */}
-                        {selectedSubService && (
+                        {selectedSubService && !showSuccess && (
                             <div className={styles.stickyBar}>
                                 <div className={styles.recap}>
                                     <div className={styles.recapIcon}>📄</div>
@@ -445,21 +445,23 @@ export default function RequestForm({ serviceKey }) {
                         </div>
 
                         {/* Sticky Bottom Bar */}
-                        <div className={styles.stickyBar}>
-                            <div className={styles.recap}>
-                                <div className={styles.recapIcon}>📅</div>
-                                <div className={styles.recapText}>
-                                    <div>Récapitulatif</div>
-                                    <strong>
-                                        {selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {selectedTime}
-                                    </strong>
+                        {!showSuccess && (
+                            <div className={styles.stickyBar}>
+                                <div className={styles.recap}>
+                                    <div className={styles.recapIcon}>📅</div>
+                                    <div className={styles.recapText}>
+                                        <div>Récapitulatif</div>
+                                        <strong>
+                                            {selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {selectedTime}
+                                        </strong>
+                                    </div>
+                                </div>
+                                <div className={styles.barActions}>
+                                    <button className={styles.btnPrev} onClick={handleBack}>Précédent</button>
+                                    <button className={styles.btnNext} onClick={handleNext}>Suivant : Adresse et Paiement →</button>
                                 </div>
                             </div>
-                            <div className={styles.barActions}>
-                                <button className={styles.btnPrev} onClick={handleBack}>Précédent</button>
-                                <button className={styles.btnNext} onClick={handleNext}>Suivant : Adresse et Paiement →</button>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
 
@@ -621,27 +623,29 @@ export default function RequestForm({ serviceKey }) {
                         </div>
 
                         {/* Sticky Bottom Bar */}
-                        <div className={styles.stickyBar}>
-                            <div className={styles.recap}>
-                                <div className={styles.recapIcon}>📅</div>
-                                <div className={styles.recapText}>
-                                    <div>Récapitulatif</div>
-                                    <strong>
-                                        {selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {selectedTime}
-                                    </strong>
+                        {!showSuccess && (
+                            <div className={styles.stickyBar}>
+                                <div className={styles.recap}>
+                                    <div className={styles.recapIcon}>📅</div>
+                                    <div className={styles.recapText}>
+                                        <div>Récapitulatif</div>
+                                        <strong>
+                                            {selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {selectedTime}
+                                        </strong>
+                                    </div>
+                                </div>
+                                <div className={styles.barActions}>
+                                    <button className={styles.btnPrev} onClick={handleBack} disabled={isSubmitting}>Précédent</button>
+                                    <button
+                                        className={styles.btnNext}
+                                        onClick={handleNext}
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Confirmation...' : 'Confirmer la demande ✓'}
+                                    </button>
                                 </div>
                             </div>
-                            <div className={styles.barActions}>
-                                <button className={styles.btnPrev} onClick={handleBack} disabled={isSubmitting}>Précédent</button>
-                                <button
-                                    className={styles.btnNext}
-                                    onClick={handleNext}
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Confirmation...' : 'Confirmer la demande ✓'}
-                                </button>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>
